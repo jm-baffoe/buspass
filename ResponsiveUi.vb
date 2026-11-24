@@ -83,7 +83,7 @@ Public Module ResponsiveUi
                     ElseIf (TypeOf c Is TextBox OrElse TypeOf c Is ComboBox) AndAlso c.Dock = DockStyle.None Then
                         c.Width = CInt(b.Width * factor)
                     End If
-                    If TypeOf c Is Button Then c.MinimumSize = New Size(CInt(125 * factor), CInt(48 * factor))
+                    If TypeOf c Is Button Then c.MinimumSize = New Size(CInt(125 * factor), CInt(44 * factor))
                     Dim grid = TryCast(c, DataGridView)
                     If grid IsNot Nothing Then
                         grid.ColumnHeadersDefaultCellStyle.Font = New Font(font, FontStyle.Bold)
@@ -92,10 +92,30 @@ Public Module ResponsiveUi
                     End If
                 Next
                 ConstrainLabels(form)
+                AlignToolbars(form)
                 form.ResumeLayout(True)
             Finally
                 applying = False
             End Try
+        End Sub
+
+        ' In a toolbar that mixes inputs and buttons: centre everything on one line and make buttons as tall as the inputs.
+        Private Sub AlignToolbars(parent As Control)
+            If TypeOf parent Is DataGridView Then Return
+            For Each c As Control In parent.Controls
+                Dim flow = TryCast(c, FlowLayoutPanel)
+                If flow IsNot Nothing AndAlso flow.FlowDirection = FlowDirection.LeftToRight Then
+                    Dim inputs = flow.Controls.Cast(Of Control)().Where(Function(x) TypeOf x Is TextBox OrElse TypeOf x Is ComboBox).ToList()
+                    If inputs.Count > 0 Then
+                        Dim h = inputs.Max(Function(x) x.PreferredSize.Height)
+                        For Each x As Control In flow.Controls
+                            x.Anchor = AnchorStyles.Left
+                            If TypeOf x Is Button Then x.MinimumSize = New Size(x.MinimumSize.Width, h)
+                        Next
+                    End If
+                End If
+                AlignToolbars(c)
+            Next
         End Sub
 
         Private Sub ConstrainLabels(parent As Control)

@@ -9,11 +9,39 @@ Public Module Ui
     Public ReadOnly Gold As Color = Color.FromArgb(250, 196, 74)
     Public ReadOnly Amber As Color = Color.FromArgb(150, 93, 0)
     Public ReadOnly Red As Color = Color.FromArgb(186, 39, 52)
+    ' Role theme: header gradient (Accent to Accent2) and a tinted page background.
+    Public Accent As Color = Ink
+    Public Accent2 As Color = Ink
+    Public Tint As Color = Paper
+
+    Public Sub SetRole(role As String)
+        Select Case role
+            Case "Passenger"
+                Accent = Color.FromArgb(21, 80, 170) : Accent2 = Color.FromArgb(0, 137, 123) : Tint = Color.FromArgb(236, 244, 255)
+            Case "Bookman"
+                Accent = Color.FromArgb(0, 105, 92) : Accent2 = Color.FromArgb(56, 142, 60) : Tint = Color.FromArgb(234, 247, 241)
+            Case Else
+                Accent = Color.FromArgb(40, 40, 120) : Accent2 = Color.FromArgb(94, 53, 177) : Tint = Color.FromArgb(242, 239, 252)
+        End Select
+    End Sub
+
+    ' White card with a coloured top stripe and a hairline border.
+    Public Sub Stripe(c As Control, color As Color)
+        AddHandler c.Resize, Sub() c.Invalidate()
+        AddHandler c.Paint, Sub(s, e)
+                                Using b As New SolidBrush(color)
+                                    e.Graphics.FillRectangle(b, 0, 0, c.Width, 8)
+                                End Using
+                                Using p As New Pen(Color.FromArgb(206, 218, 232))
+                                    e.Graphics.DrawRectangle(p, 0, 0, c.Width - 1, c.Height - 1)
+                                End Using
+                            End Sub
+    End Sub
 
     Public Sub Style(form As Form, title As String, Optional width As Integer = 1120, Optional height As Integer = 780)
         form.Text = title & " | BusPass"
         form.Font = New Font("Segoe UI", 14)
-        form.BackColor = Paper
+        form.BackColor = Tint
         form.ForeColor = Ink
         form.StartPosition = FormStartPosition.CenterScreen
         form.MinimumSize = New Size(Math.Min(900, width + 16), Math.Min(680, height + 40))
@@ -28,8 +56,10 @@ Public Module Ui
     End Function
 
     Public Function ButtonText(text As String, action As Action, Optional color As Color = Nothing) As Button
-        Dim b As New Button With {.Text = text, .Font = New Font("Segoe UI", 14, FontStyle.Bold), .AutoSize = True, .MinimumSize = New Size(125, 48), .Padding = New Padding(12, 6, 12, 6), .BackColor = If(color = Nothing, Blue, color), .ForeColor = If(color = Gold, Ink, Color.White), .FlatStyle = FlatStyle.Flat, .Cursor = Cursors.Hand, .Margin = New Padding(0, 4, 10, 4)}
+        Dim b As New Button With {.Text = text, .Font = New Font("Segoe UI", 14, FontStyle.Bold), .AutoSize = True, .AutoSizeMode = AutoSizeMode.GrowAndShrink, .MinimumSize = New Size(125, 44), .Padding = New Padding(12, 4, 12, 4), .BackColor = If(color = Nothing, Blue, color), .ForeColor = If(color = Gold, Ink, Color.White), .FlatStyle = FlatStyle.Flat, .Cursor = Cursors.Hand, .Margin = New Padding(0, 4, 10, 4)}
         b.FlatAppearance.BorderSize = 0
+        b.FlatAppearance.MouseOverBackColor = ControlPaint.Dark(b.BackColor, 0.08F)
+        b.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(b.BackColor, 0.18F)
         AddHandler b.Click, Sub(s, e) Guard(action)
         Return b
     End Function
@@ -51,13 +81,13 @@ Public Module Ui
         g.DefaultCellStyle.Padding = New Padding(5)
         g.DefaultCellStyle.SelectionBackColor = Color.FromArgb(220, 233, 250)
         g.DefaultCellStyle.SelectionForeColor = Ink
-        g.ColumnHeadersDefaultCellStyle.BackColor = Ink
+        g.ColumnHeadersDefaultCellStyle.BackColor = Accent
         g.ColumnHeadersDefaultCellStyle.ForeColor = Color.White
         g.Font = New Font("Segoe UI", 14)
         g.ColumnHeadersDefaultCellStyle.Font = New Font("Segoe UI", 14, FontStyle.Bold)
         g.ColumnHeadersHeight = 50
         g.DefaultCellStyle.WrapMode = DataGridViewTriState.True
-        g.AlternatingRowsDefaultCellStyle.BackColor = Paper
+        g.AlternatingRowsDefaultCellStyle.BackColor = Tint
         Return g
     End Function
 
@@ -204,7 +234,7 @@ Public Class EntryDialog
     End Sub
 
     Public Sub AddText(key As String, caption As String, Optional value As String = "", Optional password As Boolean = False)
-        AddField(key, caption, New TextBox With {.Font = New Font("Segoe UI", 16), .Text = value, .UseSystemPasswordChar = password, .MaxLength = If(password, 128, 150)})
+        AddField(key, caption, New TextBox With {.Font = New Font("Segoe UI", 14), .Text = value, .UseSystemPasswordChar = password, .MaxLength = If(password, 128, 150)})
     End Sub
 
     Public Sub AddChoice(key As String, caption As String, choices As IEnumerable(Of Choice), Optional selected As String = "")
@@ -246,6 +276,27 @@ Public Class EntryDialog
     Public Function CheckValue(key As String) As Boolean
         Return DirectCast(fields(key), CheckBox).Checked
     End Function
+End Class
+
+' Thin progress bar showing how full a bus is.
+Public Class SeatBar
+    Inherits Control
+    <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property Fraction As Double
+    <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property Fill As Color = Color.Green
+    Public Sub New()
+        SetStyle(ControlStyles.OptimizedDoubleBuffer Or ControlStyles.ResizeRedraw, True)
+        Height = 16
+        TabStop = False
+        AccessibleName = "Seats sold"
+    End Sub
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        Using track As New SolidBrush(Color.FromArgb(220, 229, 240)), bar As New SolidBrush(Fill)
+            e.Graphics.FillRectangle(track, 0, 0, Width, Height)
+            e.Graphics.FillRectangle(bar, 0, 0, CInt(Width * Math.Clamp(Fraction, 0, 1)), Height)
+        End Using
+    End Sub
 End Class
 
 ' Picture that fills its box like CSS "cover": scales up, centre-crops, never stretches.

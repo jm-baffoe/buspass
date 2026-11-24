@@ -6,11 +6,11 @@ Public Class WorkspaceForm
     Private ReadOnly session As LoginSession
     Private ReadOnly tabs As New TabControl With {.Dock = DockStyle.Fill, .Padding = New Point(16, 10)}
     Private ReadOnly clockTimer As New Timer With {.Interval = 4000}
-    Private ReadOnly syncLabel As Label = Ui.LabelText("", 9, False, Color.White)
+    Private ReadOnly syncLabel As Label = New Label With {.AutoSize = True, .UseMnemonic = False, .ForeColor = Color.White, .Margin = New Padding(0, 4, 12, 8), .Font = New Font("Segoe UI", 12)}
     Private ReadOnly cards As FlowLayoutPanel = Ui.Flow(True)
     Private ReadOnly fromBox As New ComboBox With {.Font = New Font("Segoe UI", 14), .DropDownStyle = ComboBoxStyle.DropDownList, .Width = 180}
     Private ReadOnly toBox As New ComboBox With {.Font = New Font("Segoe UI", 14), .DropDownStyle = ComboBoxStyle.DropDownList, .Width = 190}
-    Private ReadOnly destinationFilter As New TextBox With {.Font = New Font("Segoe UI", 16), .Width = 260, .PlaceholderText = "Filter destination…"}
+    Private ReadOnly destinationFilter As New TextBox With {.Font = New Font("Segoe UI", 14), .Width = 260, .PlaceholderText = "Filter destination…"}
     Private ReadOnly grids As New Dictionary(Of String, DataGridView)
     Private ReadOnly overview As New Panel With {.Dock = DockStyle.Fill, .AutoScroll = True, .Padding = New Padding(16)}
     Private ReadOnly scanBox As New TextBox With {.Font = New Font("Segoe UI", 18), .Width = 540, .PlaceholderText = "Ticket number or signed QR text", .MaxLength = 300}
@@ -21,19 +21,31 @@ Public Class WorkspaceForm
 
     Public Sub New(current As LoginSession)
         session = current
+        Ui.SetRole(session.Role)
         Ui.Style(Me, If(session.Role = "Passenger", "Your journeys", If(session.Role = "Bookman", "Station desk", "Operations centre")))
-        Dim top As New TableLayoutPanel With {.Dock = DockStyle.Top, .AutoSize = True, .ColumnCount = 3, .BackColor = Ui.Ink, .Padding = New Padding(20, 10, 20, 10)}
+        Dim top As New TableLayoutPanel With {.Dock = DockStyle.Top, .AutoSize = True, .ColumnCount = 3, .BackColor = Ui.Accent, .Padding = New Padding(20, 10, 20, 10)}
+        ' Role-coloured gradient; child controls are transparent so it shows through.
+        AddHandler top.Resize, Sub() top.Invalidate()
+        AddHandler top.Paint, Sub(s, e)
+                                  If top.ClientRectangle.Width < 2 OrElse top.ClientRectangle.Height < 2 Then Return
+                                  Using br As New Drawing2D.LinearGradientBrush(top.ClientRectangle, Ui.Accent, Ui.Accent2, Drawing2D.LinearGradientMode.Horizontal)
+                                      e.Graphics.FillRectangle(br, top.ClientRectangle)
+                                  End Using
+                              End Sub
         top.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
         top.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
         top.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
-        Dim branding As New FlowLayoutPanel With {.AutoSize = True, .Dock = DockStyle.Fill, .FlowDirection = FlowDirection.TopDown, .WrapContents = False}
+        Dim branding As New FlowLayoutPanel With {.AutoSize = True, .Dock = DockStyle.Fill, .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .BackColor = Color.Transparent}
         branding.Controls.Add(Ui.LabelText("BUSPASS GHANA", 22, True, Color.White))
         branding.Controls.Add(Ui.LabelText(session.Name & "  ·  " & session.Role & If(session.Role = "Bookman", "  ·  " & session.Station, ""), 14, False, Ui.Gold))
         branding.Controls.Add(syncLabel)
+        For Each l As Label In branding.Controls.OfType(Of Label)()
+            l.BackColor = Color.Transparent
+        Next
         top.Controls.Add(New PictureBox With {.Image = Ui.BrandLogo(), .BackColor = Color.White, .SizeMode = PictureBoxSizeMode.Zoom, .Size = New Size(76, 76), .Tag = "scale", .Margin = New Padding(0, 12, 20, 0)}, 0, 0)
         top.Controls.Add(branding, 1, 0)
-        Dim headerActions As New FlowLayoutPanel With {.AutoSize = True, .FlowDirection = FlowDirection.TopDown, .WrapContents = False}
-        headerActions.Controls.Add(Ui.ButtonText("Sign out", Sub() Close(), Ui.Muted))
+        Dim headerActions As New FlowLayoutPanel With {.AutoSize = True, .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .BackColor = Color.Transparent}
+        headerActions.Controls.Add(Ui.ButtonText("Sign out", Sub() Close(), Ui.Gold))
         top.Controls.Add(headerActions, 2, 0)
         Controls.Add(tabs)
         Controls.Add(top)
@@ -63,7 +75,7 @@ Public Class WorkspaceForm
     End Sub
 
     Private Function AddPage(title As String) As TabPage
-        Dim page As New TabPage(title) With {.BackColor = Ui.Paper, .Padding = New Padding(8)}
+        Dim page As New TabPage(title) With {.BackColor = Ui.Tint, .Padding = New Padding(8)}
         tabs.TabPages.Add(page)
         Return page
     End Function
@@ -80,8 +92,13 @@ Public Class WorkspaceForm
         Dim page = AddPage(If(session.Role = "Passenger", "Find a trip", "Station trips"))
         page.Controls.Add(cards)
         Dim toolbar = Ui.Flow()
-        toolbar.Controls.Add(Ui.LabelText("FROM", 10, True))
-        toolbar.Controls.Add(fromBox)
+        If session.Role = "Bookman" Then
+            ' A bookman is fixed to one station: show it as a clear label instead of a greyed-out dropdown.
+            toolbar.Controls.Add(Ui.LabelText(session.Station & " station  →", 12, True, Ui.Accent))
+        Else
+            toolbar.Controls.Add(Ui.LabelText("FROM", 10, True))
+            toolbar.Controls.Add(fromBox)
+        End If
         toolbar.Controls.Add(Ui.LabelText("TO", 10, True))
         toolbar.Controls.Add(toBox)
         toolbar.Controls.Add(Ui.ButtonText("Search / refresh", Sub() RefreshData(True)))
@@ -219,12 +236,15 @@ Public Class WorkspaceForm
             Dim r = d.Routes.Single(Function(x) x.Id = t.RouteId)
             Dim b = d.Buses.Single(Function(x) x.Id = t.BusId)
             Dim statusColor = Ui.StatusColor(t, b.Capacity)
-            Dim card As New TableLayoutPanel With {.Width = 360, .Height = If(session.Role = "Bookman", 390, 330), .Tag = "scale", .ColumnCount = 1, .BackColor = If(t.Status = "Full", Color.FromArgb(255, 237, 239), If(t.Status = "Loading", Color.FromArgb(230, 241, 255), Color.FromArgb(231, 247, 242))), .Padding = New Padding(20), .Margin = New Padding(10)}
+            Dim card As New TableLayoutPanel With {.Width = 360, .Height = If(session.Role = "Bookman", 400, 345), .Tag = "scale", .ColumnCount = 1, .BackColor = Color.White, .Padding = New Padding(20, 26, 20, 20), .Margin = New Padding(10)}
+            card.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
+            Ui.Stripe(card, statusColor)
             card.Controls.Add(Ui.LabelText(If(i = 0 AndAlso session.Role = "Bookman" AndAlso t.Status <> "Departed", "NEXT BUS  ·  ", "") & t.Status.ToUpperInvariant(), 10, True, statusColor))
             card.Controls.Add(Ui.LabelText(r.Origin & " → " & r.Destination, 19, True))
             card.Controls.Add(Ui.LabelText(t.Departure.ToString("ddd, dd MMM  ·  HH:mm") & vbCrLf & b.Number & "  ·  " & b.Driver, 10, False, Ui.Muted))
             Dim seatColor = If(t.SeatsSold >= b.Capacity, Ui.Red, If(CDec(t.SeatsSold) / b.Capacity >= 0.9D, Ui.Amber, Ui.Green))
             card.Controls.Add(Ui.LabelText((b.Capacity - t.SeatsSold).ToString() & " seats left", 23, True, seatColor))
+            card.Controls.Add(New SeatBar With {.Fraction = t.SeatsSold / b.Capacity, .Fill = seatColor, .Dock = DockStyle.Fill, .Margin = New Padding(4, 0, 4, 10)})
             card.Controls.Add(Ui.LabelText(t.SeatsSold & " / " & b.Capacity & " sold    ·    GHS " & r.Fare.ToString("N2"), 11, True))
             Dim actions = Ui.Flow()
             actions.Padding = New Padding(0)
@@ -330,7 +350,7 @@ Public Class WorkspaceForm
         Next
         overview.Controls.Clear()
         Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Top, .AutoSize = True, .ColumnCount = 1}
-        layout.Controls.Add(Ui.LabelText("Today's transport, at a glance", 24, True))
+        layout.Controls.Add(Ui.LabelText("Today's transport, at a glance", 24, True, Ui.Accent))
         layout.Controls.Add(Ui.LabelText("Revenue is successful payments less mock refunds. Occupancy counts every active reservation.", 10, False, Ui.Muted))
         Dim metrics = Ui.Flow()
         metrics.Dock = DockStyle.Top
@@ -342,7 +362,7 @@ Public Class WorkspaceForm
         AddMetric(metrics, "AVERAGE OCCUPANCY", occupancy.ToString("N0") & "%", Ui.Amber)
         AddMetric(metrics, "BUSES LOADING", d.Trips.Where(Function(t) t.Status = "Loading").Count().ToString(), Ui.Blue)
         layout.Controls.Add(metrics)
-        layout.Controls.Add(Ui.LabelText("Tickets per route", 18, True))
+        layout.Controls.Add(Ui.LabelText("Tickets per route", 18, True, Ui.Accent))
         Dim chart As New RouteChart(d) With {.Dock = DockStyle.Top, .Height = 250, .Margin = New Padding(8)}
         layout.Controls.Add(chart)
         Dim actions = Ui.Flow()
@@ -360,7 +380,8 @@ Public Class WorkspaceForm
     End Sub
 
     Private Sub AddMetric(flow As FlowLayoutPanel, caption As String, value As String, color As Color)
-        Dim card As New FlowLayoutPanel With {.Width = 275, .Height = 145, .Tag = "scale", .BackColor = Color.FromArgb(235, 245, 250), .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .Padding = New Padding(16), .Margin = New Padding(0, 6, 12, 8)}
+        Dim card As New FlowLayoutPanel With {.Width = 275, .Height = 150, .Tag = "scale", .BackColor = Color.White, .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .Padding = New Padding(16, 22, 16, 16), .Margin = New Padding(0, 6, 12, 8)}
+        Ui.Stripe(card, color)
         card.Controls.Add(Ui.LabelText(caption, 12, True, Ui.Muted))
         card.Controls.Add(Ui.LabelText(value, 28, True, color))
         flow.Controls.Add(card)
@@ -396,7 +417,7 @@ Public Class RouteChart
             Dim y = 12 + i * rowHeight
             TextRenderer.DrawText(e.Graphics, values(i).Key, Font, New Rectangle(12, y, labelWidth - 16, rowHeight), Ui.Ink, TextFormatFlags.EndEllipsis)
             Dim widthAvailable = Math.Max(20, Width - labelWidth - 65)
-            Using track As New SolidBrush(Ui.Paper), fill As New SolidBrush(Ui.Blue)
+            Using track As New SolidBrush(Color.FromArgb(232, 238, 246)), fill As New SolidBrush(Ui.Accent2)
                 e.Graphics.FillRectangle(track, labelWidth, y + 2, widthAvailable, 22)
                 e.Graphics.FillRectangle(fill, labelWidth, y + 2, CInt(widthAvailable * values(i).Value / max), 22)
             End Using
