@@ -33,13 +33,6 @@ Public Class WorkspaceForm
         top.Controls.Add(New PictureBox With {.Image = Ui.BrandLogo(), .BackColor = Color.White, .SizeMode = PictureBoxSizeMode.Zoom, .Size = New Size(76, 76), .Tag = "scale", .Margin = New Padding(0, 12, 20, 0)}, 0, 0)
         top.Controls.Add(branding, 1, 0)
         Dim headerActions As New FlowLayoutPanel With {.AutoSize = True, .FlowDirection = FlowDirection.TopDown, .WrapContents = False}
-        Dim projector As Button = Nothing
-        projector = Ui.ButtonText(If(Ui.PresentationMode, "Presentation: On", "Presentation: Off"), Sub()
-                                                                                                     Ui.TogglePresentation()
-                                                                                                     projector.Text = If(Ui.PresentationMode, "Presentation: On", "Presentation: Off")
-                                                                                                 End Sub, Ui.Gold)
-        projector.Font = New Font("Segoe UI", 12, FontStyle.Bold)
-        headerActions.Controls.Add(projector)
         headerActions.Controls.Add(Ui.ButtonText("Sign out", Sub() Close(), Ui.Muted))
         top.Controls.Add(headerActions, 2, 0)
         Controls.Add(tabs)

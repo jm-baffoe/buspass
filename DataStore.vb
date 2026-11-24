@@ -40,7 +40,15 @@ Public Module DataStore
                 stream.Write(bytes)
                 stream.Flush(True)
             End Using
-            IO.File.Move(temp, file, True)
+            ' Windows can briefly deny the replace while antivirus/indexer scans the target; retry a few times.
+            For attempt As Integer = 1 To 10
+                Try
+                    IO.File.Move(temp, file, True)
+                    Exit For
+                Catch ex As Exception When attempt < 10 AndAlso (TypeOf ex Is UnauthorizedAccessException OrElse TypeOf ex Is IOException)
+                    Threading.Thread.Sleep(50 * attempt)
+                End Try
+            Next
         Finally
             If IO.File.Exists(temp) Then IO.File.Delete(temp)
         End Try

@@ -7,7 +7,6 @@ Public Module Ui
     Public ReadOnly Blue As Color = Color.FromArgb(21, 101, 192)
     Public ReadOnly Green As Color = Color.FromArgb(0, 124, 108)
     Public ReadOnly Gold As Color = Color.FromArgb(250, 196, 74)
-    Public Property PresentationMode As Boolean
     Public ReadOnly Amber As Color = Color.FromArgb(150, 93, 0)
     Public ReadOnly Red As Color = Color.FromArgb(186, 39, 52)
 
@@ -121,13 +120,6 @@ Public Module Ui
     Public Function BrandLogo() As Image
         Return DirectCast(New System.ComponentModel.ComponentResourceManager(GetType(Form1)).GetObject("logoPicture.Image"), Image)
     End Function
-
-    Public Sub TogglePresentation()
-        PresentationMode = Not PresentationMode
-        For Each form As Form In Application.OpenForms
-            ResponsiveUi.Apply(form)
-        Next
-    End Sub
 
     Public Function SelectedId(g As DataGridView) As String
         If g.CurrentRow Is Nothing Then Throw New ArgumentException("Select a row first.")

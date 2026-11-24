@@ -38,7 +38,6 @@ Partial Class Form1
         signInButton = New Button()
         registerButton = New Button()
         demoLabel = New Label()
-        presentationCheck = New CheckBox()
         SuspendLayout()
         '
         ' shell
@@ -172,8 +171,7 @@ Partial Class Form1
         loginTable.Dock = DockStyle.Top
         loginTable.ColumnCount = 1
         loginTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        loginTable.RowCount = 10
-        loginTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        loginTable.RowCount = 9
         loginTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
         loginTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
         loginTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
@@ -287,15 +285,6 @@ Partial Class Form1
         demoLabel.BackColor = Color.FromArgb(239, 245, 252)
         demoLabel.Padding = New Padding(12)
         demoLabel.Name = "demoLabel"
-        '
-        ' presentationCheck
-        '
-        presentationCheck.AutoSize = True
-        presentationCheck.Font = New Font("Segoe UI", 12.0F, FontStyle.Bold)
-        presentationCheck.Text = "Presentation mode · larger text"
-        presentationCheck.Margin = New Padding(0)
-        presentationCheck.TabIndex = 4
-        presentationCheck.Name = "presentationCheck"
         shell.Controls.Add(brandPanel, 0, 0)
         shell.Controls.Add(loginHost, 1, 0)
         loginHost.Controls.Add(loginCard)
@@ -317,7 +306,6 @@ Partial Class Form1
         loginTable.Controls.Add(signInButton, 0, 6)
         loginTable.Controls.Add(registerButton, 0, 7)
         loginTable.Controls.Add(demoLabel, 0, 8)
-        loginTable.Controls.Add(presentationCheck, 0, 9)
         AcceptButton = signInButton
         AutoScaleDimensions = New SizeF(96.0F, 96.0F)
         AutoScaleMode = AutoScaleMode.Dpi
@@ -355,5 +343,4 @@ Partial Class Form1
     Friend WithEvents signInButton As Button
     Friend WithEvents registerButton As Button
     Friend WithEvents demoLabel As Label
-    Friend WithEvents presentationCheck As CheckBox
 End Class

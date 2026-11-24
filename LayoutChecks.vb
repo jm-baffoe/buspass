@@ -10,7 +10,7 @@ Public Module LayoutChecks
                 If login.usernameBox.Parent Is Nothing OrElse login.logoPicture.Image Is Nothing Then Throw New Exception("Designer controls and embedded logo must exist before Shown.")
                 checks.Add("PASS: Designer initializes the entire login UI and embedded logo before runtime events.")
                 login.Show()
-                login.usernameBox.Text = "Presentation preview"
+                login.usernameBox.Text = "Layout preview"
                 For Each size In {New Size(1000, 740), New Size(1280, 720), New Size(1920, 1080), New Size(1000, 740)}
                     login.ClientSize = size
                     Application.DoEvents()
@@ -20,18 +20,11 @@ Public Module LayoutChecks
                     SaveImage(login, Path.Combine(folder, "login-" & size.Width & "x" & size.Height & ".png"))
                     checks.Add("PASS: Login " & size.Width & "x" & size.Height & ": font " & login.usernameBox.Font.Size.ToString("N1") & " pt; input width " & login.usernameBox.Width & " px.")
                 Next
-                login.presentationCheck.Checked = True
-                login.ClientSize = New Size(1280, 720)
-                Application.DoEvents()
-                If login.usernameBox.Font.Size < 20 Then Throw New Exception("Presentation input font must be at least 20 pt.")
-                SaveImage(login, Path.Combine(folder, "login-presentation.png"))
-                checks.Add("PASS: Login presentation mode uses at least 20 pt input text.")
                 login.Close()
             End Using
             DataStore.Root = Path.Combine(folder, "Data")
             DataStore.Initialize()
             For Each role In {"passenger", "bookman", "admin"}
-                Ui.PresentationMode = False
                 Dim session = DataStore.Login(role, "Demo@123")
                 Using workspace As New WorkspaceForm(session)
                     workspace.Show()
@@ -46,12 +39,6 @@ Public Module LayoutChecks
                         SaveImage(workspace, Path.Combine(folder, role & "-" & size.Width & "x" & size.Height & ".png"))
                         checks.Add("PASS: " & role & " layout " & size.Width & "x" & size.Height & ": base font " & workspace.Font.Size.ToString("N1") & " pt.")
                     Next
-                    Ui.PresentationMode = True
-                    workspace.ClientSize = New Size(1280, 720)
-                    ResponsiveUi.Apply(workspace)
-                    Application.DoEvents()
-                    SaveImage(workspace, Path.Combine(folder, role & "-presentation.png"))
-                    checks.Add("PASS: " & role & " presentation mode renders with enlarged text.")
                     workspace.Close()
                 End Using
                 DataStore.Logout(session)
@@ -63,8 +50,6 @@ Public Module LayoutChecks
             checks.Add(ex.ToString())
             File.WriteAllLines(Path.Combine(folder, "layout-validation.txt"), checks)
             Environment.ExitCode = 1
-        Finally
-            Ui.PresentationMode = False
         End Try
     End Sub
 

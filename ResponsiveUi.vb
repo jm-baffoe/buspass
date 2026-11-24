@@ -66,7 +66,7 @@ Public Module ResponsiveUi
                     styles.Remove(removed)
                 Next
                 Capture(form)
-                Dim factor = CSng(Math.Clamp(form.ClientSize.Width / 1120.0, 1.0, 1.45)) * If(Ui.PresentationMode, 1.25F, 1.0F)
+                Dim factor = CSng(Math.Clamp(form.ClientSize.Width / 1120.0, 1.0, 1.45))
                 form.SuspendLayout()
                 For Each pair In styles
                     Dim c = pair.Key

@@ -2,9 +2,23 @@
 
 VB.NET Windows Forms · .NET 10 · JSON storage · QRCoder 1.8.1
 
+## Group 1 members
+
+| Name | Index number |
+|---|---|
+| Joseph Mensah | 10318690 |
+| Gifty Kumassah | 10334543 |
+| Jedidah David | 10333962 |
+| Jochebed Dapaa | 10333904 |
+| Forster Osei | 10334035 |
+| Kelvin Assigbe | 10333968 |
+| Kena Azasoo | 10334815 |
+| Maud Ominaku Bekoe | 10320062 |
+| Stephanie Ziorklui | 10333897 |
+
 ## Open and run
 
-Open `Group1.slnx` in Visual Studio 2026 and press **F5** (or Ctrl+F5). The .NET desktop development workload and .NET 10 SDK are required; both were present on the development PC. NuGet restores QRCoder on the first build. The ready-to-run framework-dependent build is also supplied in the delivery's `ReadyToRun` folder; keep all its files together and run `Group1.exe`. It needs the .NET 10 Windows Desktop runtime.
+Open `Group1.slnx` in Visual Studio 2026 and press **F5** (or Ctrl+F5). The .NET desktop development workload and .NET 10 SDK are required; both were present on the development PC. NuGet restores QRCoder on the first build (the package is also included in `packages/`).
 
 | Username | Password | Workspace |
 |---|---|---|
@@ -63,14 +77,14 @@ Print preview uses `PrintDocument` and `PrintPreviewDialog`; Windows needs an in
 
 Future work: real MoMo/SMS, GPS, seat numbers, multiple companies, web/mobile apps, PostgreSQL, payment reconciliation, production security and monitoring.
 
-## Source map / group split
+## Source map
 
-| Member | Main files | Responsibility |
+| Area | Main files | Responsibility |
 |---|---|---|
-| 1 | `Models.vb`, `DataStore.vb`, `Program.vb`, `Form1.vb` | Models, persistence, authentication, registration, auditing |
-| 2 | `WorkspaceForm.vb`, `TicketForm.vb` | Passenger search, booking, MoMo, SMS and QR tickets |
-| 3 | `WorkspaceForm.vb`, `TicketForm.vb` | Station cards, cash sales, validation, status and printing |
-| 4 | `AdminEditors.vb`, `WorkspaceForm.vb`, `Ui.vb` | Management, grids, dashboard, chart and responsive controls |
+| Core | `Models.vb`, `DataStore.vb`, `Program.vb`, `Form1.vb` | Models, persistence, authentication, registration, auditing |
+| Passenger | `WorkspaceForm.vb`, `TicketForm.vb` | Search, booking, MoMo, SMS and QR tickets |
+| Bookman | `WorkspaceForm.vb`, `TicketForm.vb` | Station cards, cash sales, validation, status and printing |
+| Admin | `AdminEditors.vb`, `WorkspaceForm.vb`, `Ui.vb` | Management, grids, dashboard, chart and responsive controls |
 
 The login screen is fully defined in `Form1.Designer.vb`, including its embedded logo, text boxes and buttons, so it is visible and editable in the Visual Studio designer. Runtime login behavior and bounded responsive sizing live in `Form1.vb`. Other screens use reusable Dock, TableLayoutPanel and FlowLayoutPanel controls. `ResponsiveUi.vb` scales readable fonts and their containers together.
 
@@ -82,11 +96,11 @@ For visual QA only: `Group1.exe --ui-test passenger "C:\some\isolated-qa-folder"
 
 QRCoder package and license: https://www.nuget.org/packages/QRCoder/1.8.1 (MIT). There are no image assets or web services required to run the application.
 
-## Presentation and visual refresh
+## Visual design
 
-Login inputs start at 18 pt and grow with larger windows while their width stays bounded. The login checkbox **Presentation mode** and the workspace gold **Presentation: On/Off** button enlarge text for a projector. Workspaces start with a 14 pt base font, increase toward 20 pt at full HD, and can be enlarged further with presentation mode. Smaller windows keep readable text and use wrapping or scrolling instead of shrinking it. Repeated maximize/restore does not compound font scaling.
+Login inputs start at 18 pt and grow with larger windows while their width stays bounded. Workspaces start with a 14 pt base font and increase toward 20 pt at full HD. Smaller windows keep readable text and use wrapping or scrolling instead of shrinking it. Repeated maximize/restore does not compound font scaling.
 
 The generated bus-and-road logo is embedded in Form1.resx and included in Assets/group1-logo.png; keep the Assets folder with the source. No separate image files are needed beside the compiled app. The palette uses navy, teal, blue and gold with status colours on trip cards.
 
-Run Group1.exe --layout-test with a new isolated output folder as the second argument to render and check the login and all role workspaces at small, projector and full-HD sizes. The visual report is LAYOUT-VALIDATION.txt in this delivery.
+Run `Group1.exe --layout-test "C:\some\new\isolated-folder"` to render and check the login and all role workspaces at small and full-HD sizes. It writes screenshots and `layout-validation.txt` into that folder.
 

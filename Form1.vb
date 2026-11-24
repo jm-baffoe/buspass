@@ -6,16 +6,9 @@ Public Class Form1
         InitializeComponent()
         AddHandler signInButton.Click, Sub() Ui.Guard(AddressOf SignIn)
         AddHandler registerButton.Click, Sub() Ui.Guard(AddressOf RegisterPassenger)
-        AddHandler presentationCheck.CheckedChanged, Sub()
-                                                        Ui.PresentationMode = presentationCheck.Checked
-                                                        ArrangeLogin()
-                                                    End Sub
         AddHandler Resize, Sub() ArrangeLogin()
         AddHandler Shown, Sub() ArrangeLogin()
-        AddHandler Activated, Sub()
-                                  presentationCheck.Checked = Ui.PresentationMode
-                                  ArrangeLogin()
-                              End Sub
+        AddHandler Activated, Sub() ArrangeLogin()
         AddHandler FormClosed, Sub()
                                    For Each assigned In runtimeFonts.Values
                                        assigned.Dispose()
@@ -28,7 +21,7 @@ Public Class Form1
         If arranging OrElse shell Is Nothing OrElse ClientSize.Width < 100 Then Return
         arranging = True
         Try
-            Dim factor As Single = CSng(Math.Clamp(ClientSize.Width / 1120.0, 1.0, 1.3)) * If(Ui.PresentationMode, 1.12F, 1.0F)
+            Dim factor As Single = CSng(Math.Clamp(ClientSize.Width / 1120.0, 1.0, 1.3))
             Dim width = Math.Min(ClientSize.Width - 40, 1560)
             Dim height = Math.Max(100, ClientSize.Height - 40)
             shell.SetBounds((ClientSize.Width - width) \ 2, 20, width, height)
@@ -46,7 +39,6 @@ Public Class Form1
             SetLoginFont(signInButton, 16 * factor, True)
             SetLoginFont(registerButton, 14 * factor, True)
             SetLoginFont(demoLabel, 12 * factor)
-            SetLoginFont(presentationCheck, 12 * factor, True)
             signInButton.Height = CInt(52 * factor)
             registerButton.Height = CInt(48 * factor)
             For Each label In {welcomeLabel, subtitleLabel, demoLabel}
